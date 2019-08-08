@@ -1,0 +1,238 @@
+<!DOCTYPE HTML>
+<html lang='en'>
+
+<head>
+	<meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+  <link rel="shortcut icon" href="/images/logo4.png" type="image/x-icon">
+  <title>WX Migrator</title>
+	<style>
+		h1 {
+		font-family: georgia;
+		}
+		body {
+			background-color: #faf2e4;
+			font-family: sans-serif;
+			margin-left: 0px;
+			margin-right: 0px;
+			margin-top: 0px;
+		}
+		header {
+			border-bottom: 1px solid #57b1dc;
+			background-color: #33C7FF;
+			margin-left: 0px;
+			margin-right: 0px;
+			margin-top: 0px;
+			display: grid;
+			grid-template-rows: 30px 30px 30px 30px;
+			grid-template-columns: 20px 90px 1fr 60px 400px 150px;
+		}
+		#titleTable {
+			margin-top: 40px;
+			margin-left: 70px;
+			border-bottom: 1px solid #57b1dc;
+		}
+		nav {
+				width: 100%;
+				margin-left: 50px;
+				margin-right: 50px;
+				margin-top: 7px;
+				margin-bottom: 7px;
+				float: right;
+				padding-top: 8px;
+				padding-bottom: 4px;
+		}
+		#migrateInput {
+			width: 50%;
+			height: 200px;
+			padding-left: 10px;
+			padding-right: 10px;
+			padding-top: 15px;
+			padding-bottom: 7px;
+			border: 2px solid #57b1dc;
+			background-color: rgba(218, 213, 77, 0.495);
+			margin-right: 50px;
+			margin-top: 0px;
+			margin-bottom: 10px;
+			float: right;
+		}
+		#logo {
+			grid-row-start: 2;
+			grid-column-start: 2;
+		}
+		#title {
+			grid-row-start: 2;
+			grid-column-start: 3;
+		}
+		#userLbl {
+			grid-row-start: 1;
+			grid-column-start: 4;
+			color: gray;
+		}
+		#orgLbl {
+			grid-row-start: 3;
+			grid-column-start: 4;
+		  color: gray;
+		}
+		#user {
+			grid-row-start: 1;
+			grid-column-start: 5;
+			color: gray;
+		}
+		#org {
+			grid-row-start: 3;
+			grid-column-start: 5;
+			color: gray;
+		}
+		#lo {
+			grid-row-start: 2;
+			grid-column-start: 6;
+		}
+		.button {
+				background-color: #3AD6CF;
+				border: none;
+				color: white;
+				padding: 15px 25px;
+				text-align: center;
+				font-size: 17px;
+				cursor: pointer;
+				border: 1px solid;
+				border-radius: 2em;
+				padding: .5em 1em;
+				margin: .1em;
+				float: right;
+		}
+		.button:hover {
+				background-color: #B6BEBE;
+		}
+		main {
+				margin-left: 50px;
+				margin-right: 50px;
+		}
+		#tableDevices {
+				border: 2px outset;
+				background-color: white;
+				width: 100%;
+		}
+		th {
+				border: 1px solid;
+				background-color: #B6BEBE;
+				align-items: left;
+				height: 30px;
+		}
+		footer {
+			color: gray;
+			font-style: italic;
+			border-top: 1px solid #57b1dc;
+			text-align: center;
+			width: 100%;
+			position: fixed;
+			bottom: 0%;
+			left: 0%;
+		}
+		td {
+			/* border: 1px solid; */
+		}
+	</style>
+</head>
+
+<body>
+	<header>
+		<img src='/davpages/cropped-rocket-logo-inverted-transparent_small.png' alt='logo' id='logo'>
+		<h1 id='title'>WX Migrator</h1>
+		<h4 id='userLbl'>User:</h4>
+		<h4 id='user'><%= user %></h4>
+		<h3 id='lo'><a href='TO-DO'>Logout</a></h3>
+		<h4 id='orgLbl'>Org:</h4>
+		<h4 id='org'><%= org %></h4>
+	</header>
+
+	<div id='titleTable'>
+		<h2>Devices</h2>
+	</div>
+	
+	<nav>
+		<button class='button' class='button' disabled>Migrate Device...</button>
+		<button class='button' class='button' disabled>Add Device...</button>
+		<button type='button' class='button' disabled>Refresh</button>
+	</nav>
+	
+	<div id='migrateInput'>
+		<form>
+			<fieldset style='width:50%'>
+				<legend>Excel file and input the endoint(s) credentials:</legend>
+					<p><input type='file' accept='text/plain' name='fileselect' value='fileselect' id='fileselect'></p>
+					<p><label>username: </label><input type='text' id='username'></p>
+					<p><label>password: </label><input type='password' id='pwd'></p>
+			</fieldset>
+		</form>
+		
+		
+		
+		<button type='button' class='button' onclick='sendData()'>Submit</button>
+		<button class='button' class='button'><a href='/refresh'>Cancel</a></button>
+	</div>
+
+	<main>
+		<table id='tableDevices'>
+			<tr>
+				<th style='width:35%'>Type</th><th style='width:35%'>Belongs to Place</th><th style='width:15%'>IP Address</th><th style='width:15%'>Status</th>
+			</tr>
+			<% devices.forEach(function(device) { %>
+			<tr>
+				<td style='height:28px'><%= device.type %></td>
+				<td><%= device.place %></td>
+				<td><%= device.ip %></td>
+				<td><%= device.status %></td>
+			</tr>
+			<% }); %>
+
+		</table>
+	</main>
+
+
+	<footer style='margin-left: 0px'>
+		<p style="margin-left:100px">Copyright August 2009 Davide Grandis (dgrandis@cisco.com)</p>
+	</footer>
+
+</body>
+
+<script language='javascript'>
+	function sendData() {
+		var http = new XMLHttpRequest();
+		//const file = document.getElementById('fileselect').value;
+		const filename = document.getElementById('fileselect').files[0]; 
+		const user = document.getElementById('username').value;
+		const pwd =  document.getElementById('pwd').value;
+		// reads the file and pass it to the server as a string
+		var reader = new FileReader();
+		reader.readAsText(filename);
+		reader.onload = function() {
+			var text = reader.result;
+			// template: var obj = 'orem=ipsum&name=binny';
+			var obj = 'file=' + text + '&user=' + user + '&password=' + pwd;
+			obj = encodeURI(obj);
+
+			// Define what happens on successful data submission
+			http.addEventListener('load', function (event) {
+				//alert('Yeah! Data sent and response loaded.');
+			});
+
+			// Define what happens in case of error
+			http.addEventListener('error', function (event) {
+				alert('Oops! Something went wrong.');
+			});
+
+			// Set up our request
+			http.open('POST', '/runMigration', true);
+
+			// Send our FormData object; HTTP headers are set automatically
+			http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+			http.send(obj);
+
+		};
+	};
+
+</script>
+
+</html>
