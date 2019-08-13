@@ -1,11 +1,7 @@
 const express = require('express');
-const ejs = require("ejs");
+//const ejs = require("ejs");
 const request = require("request");
-const srequest = require('sync-request');
 const jsxapi = require('jsxapi');
-
-const read = require("fs").readFileSync;
-const join = require("path").join;
 const path = require('path');
 
 // Webex integration details
@@ -26,24 +22,32 @@ app.use(express.static(path.join(__dirname, 'www/assets')));
 // to support URL-encoded bodies by the client (for POST) 
 app.use(express.urlencoded({extended: true}));
 
-// Variabili recuperate dalla procedura di Oauth
+// For output of the Oauth procedure
 var token;
 var user;
 var org;
 
-// Variabili per la migrazione
-var ipAddress = [];
-var placeName = [];
-var placeId = [];
-var placeNameCheck = [];
-var activationCode = [];
-var migrationOutcome = [];
+// Variables for the migration
+//    endpoint: includes the full state of the migration, including
+//    the description since it cannot be resolved in the HTML/EJS page
+//    fields:
+//      id: counter (from 0)
+//      ip: IP address (from the .csv)
+//      place: name of the place (from the .csv)
+//      status: numeric:
+//          0 = initial state
+//          1 = migration completed 
+//         >1 = errors
+//      statusDesc: corresponding descriptions
+var endpoints = [];
+// credentials for the on-prem endpoints
+var username, password, disableAdmin;
 
 
 // Step 1: initiate the OAuth flow
 //   - serves a Web page with a link to the Webex OAuth flow initializer
 
-app.get("/index.html", function (req, res) {
+app.get('/', function (req, res) {
     console.log('serving the Migrator home page');
 
     const initiateURL = "https://api.ciscospark.com/v1/authorize?"
@@ -52,21 +56,16 @@ app.get("/index.html", function (req, res) {
         + "&redirect_uri=" + encodeURIComponent(redirectURI)
         + "&scope=" + encodeURIComponent(scopes)
         + "&state=" + state;
+    res.render('index.ejs', { "link": initiateURL });
 
-    const str = read(join(__dirname, '/www/index.ejs'), 'utf8');
-    // inject the link into the template
-    const compiled = ejs.compile(str)({ "link": initiateURL });
-    res.send(compiled);
 });
 
-app.get("/", function (req, res) {
-    res.redirect("/index.html");
+app.get('/index.html', function (req, res) {
+    res.redirect('/');
 });
-
 
 // Step 2: process OAuth on redirect from Webex Oauth
-
-app.get("/oauth", function (req, res) {
+app.get('/oauth', function (req, res) {
     console.log("Oauth callback (redirect) received");
 
     if (req.query.error) {
@@ -90,10 +89,8 @@ app.get("/oauth", function (req, res) {
         res.send("<h1>OAuth Integration could not complete</h1><p>Unexpected error.</p>");
         return;
     }
-
     // Oauth successful so far
     // Retrieves the access token - parameters for the API call
-
     var options = {
     method: 'POST',
     url: 'https://api.ciscospark.com/v1/access_token',
@@ -213,20 +210,15 @@ app.get("/oauth", function (req, res) {
                         devices.push({
                             type: json.items[i].product, place: json.items[i].displayName, ip: json.items[i].ip, status: json.items[i].connectionStatus })
                     }
-        
-
                     // Return the HTML page via a EJS template
-                    const str = read(join(__dirname, '/www/main.ejs'), 'utf8');
-                    const compiled = ejs.compile(str)({ 'user': user, 'org': org, devices: devices });
-                    res.send(compiled);
+                    res.render("main.ejs", {user: user, org: org, devices: devices});
                 });
             });
         });
     });
 });    
 
-
-app.get("/refresh", function (req, res) {
+app.get('/refresh', function (req, res) {
     console.log("Refresh requested");
 
     // Retrieves the list of the devices - GET https://api.ciscospark.com/v1/devices
@@ -238,14 +230,14 @@ app.get("/refresh", function (req, res) {
     };
     request(options, function (error, response, body) {
         if (error) {
-            console.log("could not reach Webex API to retreive the device list, error: " + error);
-            res.send("<h1>OAuth Integration could not complete</h1><p>Sorry, could not retrieve the device list. Try again.</p>");
+            console.log("Auth failure - error: " + error);
+            res.redirect('/');
             return;
         }
         // Check if the call is successful
         if (response.statusCode != 200) {
-            console.log("could not retreive the device list, /devices returned: " + response.statusCode);
-            res.send("<h1>OAuth Integration could not complete</h1><p>Sorry, could not retrieve the device list. Try again.</p>");
+            console.log("Auth failure - error: HTTP " + response.statusCode);
+            res.redirect("/");
             return;
         }
         // json is an array
@@ -258,77 +250,42 @@ app.get("/refresh", function (req, res) {
                 type: json.items[i].product, place: json.items[i].displayName, ip: json.items[i].ip, status: json.items[i].connectionStatus
             })
         }
-
-
         // Return the HTML page via a EJS template
-        const str = read(join(__dirname, '/www/main.ejs'), 'utf8');
-        const compiled = ejs.compile(str)({ 'user': user, 'org': org, devices: devices });
-        res.send(compiled);
+        res.render("main.ejs", {user: user, org: org, devices: devices});
     });
 });    
 
-
-app.get("/migrate", function (req, res) {
+// displays the form for the migration (data collection)
+app.get("/migrateForm", function (req, res) {
     console.log("Migrate requested");
-
-    // Retrieves the list of the devices - GET https://api.ciscospark.com/v1/devices
-
-    const options = {
-        method: 'GET',
-        url: 'https://api.ciscospark.com/v1/devices',
-        headers: { "authorization": "Bearer " + token }
-    };
-    request(options, function (error, response, body) {
-        if (error) {
-            console.log("could not reach Webex API to retreive the device list, error: " + error);
-            res.send("<h1>OAuth Integration could not complete</h1><p>Sorry, could not retrieve the device list. Try again.</p>");
-            return;
-        }
-        // Check if the call is successful
-        if (response.statusCode != 200) {
-            console.log("could not retreive the device list, /devices returned: " + response.statusCode);
-            res.send("<h1>OAuth Integration could not complete</h1><p>Sorry, could not retrieve the device list. Try again.</p>");
-            return;
-        }
-        // json is an array
-        const json = JSON.parse(body);
-        var devices = [];
-        var i;
-        for (i = 0; i < json.items.length; i++) {
-            //console.log(json.items[i].displayName, json.items[i].ip, json.items[i].product);
-            devices.push({
-                type: json.items[i].product, place: json.items[i].displayName, ip: json.items[i].ip, status: json.items[i].connectionStatus
-            })
-        }
-
-        // Return the HTML page via a EJS template
-        const str = read(join(__dirname, '/www/main-migrate.ejs'), 'utf8');
-        const compiled = ejs.compile(str)({ 'user': user, 'org': org, devices: devices });
-        res.send(compiled);
-    });
+    // Return the HTML page via a EJS template
+    if (token === undefined) {
+        res.redirect('/');
+    }
+    else {
+        res.render("migrate-form.ejs", {user: user, org: org});
+    }
 });
 
-
-// Run the migration of the endpoint from the Excel file
-app.post('/runMigration', function(req, res){
-    console.log('GO with the migration!');
+// loads the migration data in the global variables and displays the table
+app.post('/migrateTable', function(req, res){
+    console.log('Load migration data and display the table');
     //console.log(req.body);
     const file = req.body.file;
-    const user = req.body.user;
-    const pwd = req.body.password;
-    // return HTTP 200 to the browser
-    res.statusCode = 200;
-    res.end("200!");
+    username = req.body.user;
+    password = req.body.password;
+    disableAdmin = req.body.disableAdmin;  // true/false
     // process the data
     const data = file.replace(/(\r\n|\n|\r)/gm, ";");
     const arrayDevices = data.split(';');
     // Structure of arrayDevices: two entries per record, num of rows = lenght/2
-    var i;
+    // Moving the data moved in 2 arrays, ipAddress and placeName
     var fieldType = 'ip';
     var ipAddress = [];
     var placeName = [];
-
-    for (i=0; i<arrayDevices.length; i++) {
+    // empty the endpoints array first
+    endpoints = [];
+    for (let i=0; i<arrayDevices.length; i++) {
         if (fieldType == 'ip') {
             ipAddress.push(arrayDevices[i]);
             fieldType = 'place';
@@ -338,91 +295,128 @@ app.post('/runMigration', function(req, res){
             fieldType = 'ip'
         };
     };
-    // Data moved in 2 arrays, ipAddress and placeName
+    // loads (and initialise) the global variable ENDPOINTS that feeds the migration table
+    for (let i = 0; i < ipAddress.length; i++) {
+        endpoints.push({
+            id: i, ip: ipAddress[i], place: placeName[i], status: '0', statusDesc: 'Click to migrate...'
+        })
+    }
+    //console.log(endpoints);
+    // serves the main section of the page (migrate table)
+    res.render("migrate.ejs", { user: user, org: org, endpoints: endpoints });
+});
 
-    // Now the migration finally starts
-    // Data for the migration are in the arrays ipAddress and placeName 
-    // and in the variables user, pwd
-    // Loops over the endpoints to migrate
+// starts the migration of the requested endpoint (from the migrate button in the migration table)
+app.post('/migrate', function (req, res) {
+    var id = req.body.id;
+    console.log('Migrate endpoint with id: ' + id);
+    // endpoint migration step 1: connect to the endpoint
+    //  - to avoid creating a place if the endpoint is not reachable and 'OK'
+    var xapi = jsxapi.connect('ssh://' + endpoints[id].ip, { username: username, password: password});
+    //handler for any errors encountered with jsxapi
+    xapi.on('error', (err) => {  
+        console.error('ERROR: connection to the endpoint failed: ${err}');
+        endpoints[id].status = 2;
+        endpoints[id].statusDesc = 'ERROR: cannot connect to the endpoint.';
+        res.status(200);
+        // Note: the IP address is used to identify the description <td> element
+        res.end(JSON.stringify({ id: id, ip: endpoints[id].ip, status: endpoints[id].statusDesc }));
+    });
+    if (endpoints[id].status == 0) {
 
-    console.log('ipAddress: ' + ipAddress);
-    console.log('placeName: ' + placeName);
-
-    var endpoint;
-
-    for (endpoint=1; endpoint<=ipAddress.length; endpoint++) {
-
-        // Step 1/3: create the place
-        //      INPUT: place name
-        //      OUTPUT: place id -> stored in a new array
-
-        //      POST https://api.ciscospark.com/v1/places
-
-        // sync request
+        // migration step 2: create the place
         var url = 'https://api.ciscospark.com/v1/places';
-        var body = { displayName: placeName[endpoint-1], type: 'room_device' };
-        body = JSON.stringify(body);
-        var res = srequest('POST', url, {
-            headers: {
-                'Content-Type': 'application/json',
-                "authorization": "Bearer " + token },  
-            body: body
+        var data = { displayName: endpoints[id].place, type: 'room_device' };
+        const params = {
+            method: 'POST',
+            url: url,
+            body: JSON.stringify(data),
+            headers: { 'Content-Type': 'application/json', 'authorization': 'Bearer ' + token }};
+        request(params, function (error, response, body) {
+            if (error || response.statusCode != 200) {
+                console.log("Error creating the place!");
+                endpoints[id].status = 3;
+                endpoints[id].statusDesc = 'ERROR: cannot create the Place. Check the entitlement.';
+                res.status(200);
+                // Note: the IP address is used to identify the description <td> element
+                res.end(JSON.stringify({ id: id, ip: endpoints[id].ip, status: endpoints[id].statusDesc }));
+            }
+            else {
+                const json = JSON.parse(body);
+                var place = json.id;
+                console.log('Place created: ' + place);
+
+                // migration step 3: create the code
+                var url = 'https://api.ciscospark.com/v1/devices/activationCode';
+                var data = { placeId: place };
+                const params = {
+                    method: 'POST',
+                    url: url,
+                    body: JSON.stringify(data),
+                    headers: { 'Content-Type': 'application/json', 'authorization': 'Bearer ' + token }
+                };
+                request(params, function (error, response, body) {
+                    if (error || response.statusCode != 200) {
+                        console.log("Error creating the activation code!");
+                        endpoints[id].status = 4;
+                        endpoints[id].statusDesc = 'ERROR: cannot create the activation code. Check the entitlement.';
+                        res.status(200);
+                        // Note: the IP address is used to identify the description <td> element
+                        res.end(JSON.stringify({ id: id, ip: endpoints[id].ip, status: endpoints[id].statusDesc }));
+                    }
+                    else {
+                        const json = JSON.parse(body);
+                        var code = json.code;
+                        console.log('Code created: ' + code);
+
+                        // migration step 4: sending the activation code to the endpoint
+                        let option = 'NoAction';
+                        if (disableAdmin) {
+                            option = 'Harden'
+                        }
+                        // To replace with Request in order to get the response
+                        xapi.command('Webex Registration Start', { ActivationCode: code, SecurityAction: option });
+                        // assuming the migration command has completed 
+                        endpoints[id].status = 1;
+                        endpoints[id].statusDesc = 'Migration of the endpoint completed succesfully.';
+                        // sends the response to the client
+                        res.status(200);
+                        // Note: the IP address is used to identify the description <td> element
+                        res.end(JSON.stringify({ id: id, ip: endpoints[id].ip, status: endpoints[id].statusDesc }));
+                    }
+
+
+
+                });
+
+
+
+
+            }
         });
-        const newPlaceOutput = JSON.parse(res.getBody('utf8'));
+    };
+});
 
-        // stores the newly created place ID
-        placeId[endpoint] = newPlaceOutput.id;
-        placeNameCheck[endpoint] = newPlaceOutput.displayName;
+// shows a 404 error if no other routes are matched
+// note: default path for .ejs files is /views
+app.use(function(req, res) {
+    res.status(404).render('404.ejs');
+});
 
-            // Step 2/3: create the activation code for the place 
-            //      INPUT: place id
-            //      OUTPUT: code -> stored in a new array
+// === F U N C T I O N S ===
 
-            //      POST https://api.ciscospark.com/v1/devices/activationCode
-
-            // sync request
-        url = 'https://api.ciscospark.com/v1/devices/activationCode';
-        body = { placeId: placeId[endpoint-1] };
-        body = JSON.stringify(body);
-        var res = srequest('POST', url, {
-            headers: {
-                'Content-Type': 'application/json',
-                "authorization": "Bearer " + token
-            },
-            body: body
-        });
-        const codeOutput = JSON.parse(res.getBody('utf8'));
-
-        // stores the newly created activation code
-        // remember that the call are async and run out of order so the normal PUSH would be a disaster!
-        activationCode[endpoint] = codeOutput.code;
-
-        //////
-
-        // Step 3/3: send the code to the endpoint
-        //      INPUT: IP address, username, password
-        //      OUTPUT: return code (OK, KO) -> stored in a new array
-
-        const xapi = jsxapi.connect('ssh://host.example.com', {
-            username: 'admin',
-            password: 'password',
-        });
-
-
-
-    }; // end of loop over the endpoints
-
-    console.log('placeId: ' + placeId);
-    console.log('placeNameCheck: ' + placeNameCheck);
-    console.log('activationCode: ' + activationCode);
-
-
-}); // end of the full migration task
-
+function getLogoutURL(token, redirectURL) {
+  const rootURL = redirectURL.substring(0, redirectURL.length - 5);
+  return (
+    "https://idbroker.webex.com/idb/oauth2/v1/logout?" +
+    "goto=" +
+    encodeURIComponent(rootURL) +
+    "&token=" +
+    token
+  );
+}
 
 
 // Starts the Express HTTP server
 
-app.listen(port, function () {
-    console.log("HTTP Server (Express) listening on port: " + port);
-});
+app.listen(port, () => console.log("HTTP Server (Express) listening on port: " + port));

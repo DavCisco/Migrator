@@ -1,0 +1,62 @@
+<script>
+
+	function sendData() {
+		var http = new XMLHttpRequest();
+		//const file = document.getElementById('fileselect').value;
+		const filename = document.getElementById('fileselect').files[0]; 
+		const user = document.getElementById('username').value;
+		const pwd =  document.getElementById('pwd').value;
+		disableAdmin = document.getElementById('disableAdmin').checked;
+		// reads the file and pass it to the server as a string
+		var reader = new FileReader();
+		reader.readAsText(filename);
+		reader.onload = function() {
+			var fileContent = reader.result;
+			// template: var obj = 'orem=ipsum&name=binny';
+			var obj = 'file=' + fileContent + '&user=' + user + '&password=' + pwd + '&disableAdmin=' + disableAdmin ;
+			obj = encodeURI(obj);
+
+			// Define what happens on successful data submission
+			http.addEventListener('load', function (event) {
+				//alert('Yeah! Data sent and response loaded.');
+				// replaces the "main" section in the page
+				document.getElementById('main').innerHTML = this.responseText;
+			});
+
+			// Define what happens in case of error
+			http.addEventListener('error', function (event) {
+				alert('Oops! Something went wrong.');
+			});
+
+			// Set up our request
+			http.open('POST', '/migrateTable', true);
+
+			// Send our FormData object; HTTP headers are set automatically
+			http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+			http.send(obj);
+		};
+	};
+
+	// for the migrate.ejs template
+	function action() {
+		//alert(event.target.id);
+		document.getElementById(event.target.id).style.display = 'none';
+		var http = new XMLHttpRequest();
+		// id of the endpoint from the button id
+		const obj = 'id=' + event.target.id;
+		// Define what happens on successful data submission
+		http.addEventListener('load', function (event) {
+			json = JSON.parse(this.responseText);
+			document.getElementById(json.ip).innerText = json.status;
+		});
+		// Define what happens in case of error
+		http.addEventListener('error', function (event) {
+			alert('Oops! Something went wrong.');
+		});
+		// Set up the request
+		http.open('POST', '/migrate', true);
+		http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+		http.send(obj);
+	};
+
+</script>

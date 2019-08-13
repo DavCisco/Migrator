@@ -1,0 +1,37 @@
+<% include header.ejs %>
+
+	<div id='titleTable'>
+		<h2>Devices</h2>
+	</div>
+	
+	<nav>
+		<button class='button' class='button'><a href='/migrateForm'>Migrate Device...</a></button>
+		<button class='button' class='button'><a href="/adddevice">Add Device...</A></button>
+		<button type='button' class='button'><a href='/refresh'>Refresh</a></button>
+	</nav>
+	
+	<main>
+		<table id='tableDevices'>
+			<tr>
+				<th style='width:35%'>Type</th><th style='width:35%'>Belongs to Place</th><th style='width:15%'>IP Address</th><th style='width:15%'>Status</th>
+			</tr>
+			<% devices.forEach(function(device) { %>
+			<tr>
+				<td style='height:28px'><%= device.type %></td>
+				<td><%= device.place %></td>
+				<td><%= device.ip %></td>
+				<td><%= device.status %></td>
+			</tr>
+			<% }); %>
+
+		</table>
+
+
+
+	</main>
+
+	<% include footer.ejs %>
+
+</body>
+
+</html>
