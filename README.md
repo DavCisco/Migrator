@@ -1,4 +1,7 @@
-# Migrator
+# WX Migrator
+WX Migrator is a very friendly tool to help Webex Teams administrators to remotely migrate Cisco video endpoints from on-prem to cloud call control.
+
+# Version
 Webex Migrator version 2.0 beta (Aug 15th 2019)
 
 # Requirements
