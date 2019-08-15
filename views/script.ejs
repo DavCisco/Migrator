@@ -40,7 +40,9 @@
 	// for the migrate.ejs template
 	function action() {
 		//alert(event.target.id);
-		document.getElementById(event.target.id).style.display = 'none';
+		//document.getElementById(event.target.id).style.display = 'none';  // hides the button
+		document.getElementById(event.target.id).disabled = true;
+		document.getElementById(event.target.id).innerText = 'Please wait';
 		var http = new XMLHttpRequest();
 		// id of the endpoint from the button id
 		const obj = 'id=' + event.target.id;
@@ -48,6 +50,7 @@
 		http.addEventListener('load', function (event) {
 			json = JSON.parse(this.responseText);
 			document.getElementById(json.ip).innerText = json.status;
+			document.getElementById(json.id).style.display = 'none';
 		});
 		// Define what happens in case of error
 		http.addEventListener('error', function (event) {

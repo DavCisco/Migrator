@@ -1,20 +1,19 @@
 const express = require('express');
-//const ejs = require("ejs");
 const request = require("request");
-const jsxapi = require('jsxapi');
 const path = require('path');
+const jsdom = require("jsdom");
+const { JSDOM } = jsdom;
 
 // Webex integration details
 
-const clientId = 'C4927e3a0522cd588a4aee82e41343fb61e1ee50659ac54491584c9ce3894ce02';
-const clientSecret = '3490721c4f5a4325231ac314b786fcdb2ad0bdcdc85a2c209299f57ce615bce4';
+const clientId = 'C00f24cafd10fcdaacd19edc9cb8da5a673808430778c3ee4d0fb8d24781bd8ed';
+const clientSecret = '6229fcb498fab55778387a316cbe54ea421f45c25fb6ece9746e2a39b5f152e1';
 // the scopes separator is a space, example: "spark:people_read spark:rooms_read"
 // Note: spark:kms is added by default in the integration definition
-const scopes = 'spark:kms spark:all spark-admin:devices_write spark-admin:places_write';
+const scopes = 'spark:kms spark:all spark-admin:devices_write spark-admin:places_write spark-admin:organizations_read identity:placeonetimepassword_create';
 const port = '8080';
 const redirectURI = `http://localhost:${port}/oauth`;
-// not used
-const state = 'Challenge';
+const state = 'Challenge';  // not used
 
 const app = express();
 // path to serve static content (css & js) for EJS templates
@@ -310,92 +309,164 @@ app.post('/migrateTable', function(req, res){
 app.post('/migrate', function (req, res) {
     var id = req.body.id;
     console.log('Migrate endpoint with id: ' + id);
+
+    // Migration error table (stored in endpoint[i].status)
+    // 0 initial value (no error yet)
+    // 1 migration completed succesfully
+    // 21 endpoint connection issue: cannot reach
+    // 22 endpoint connection issue: HTTP != 200
+    // 31
+    // 
+    endpoints[id].status = 0;
+
     // endpoint migration step 1: connect to the endpoint
     //  - to avoid creating a place if the endpoint is not reachable and 'OK'
-    var xapi = jsxapi.connect('ssh://' + endpoints[id].ip, { username: username, password: password});
-    //handler for any errors encountered with jsxapi
-    xapi.on('error', (err) => {  
-        console.error('ERROR: connection to the endpoint failed: ${err}');
-        endpoints[id].status = 2;
-        endpoints[id].statusDesc = 'ERROR: cannot connect to the endpoint.';
-        res.status(200);
-        // Note: the IP address is used to identify the description <td> element
-        res.end(JSON.stringify({ id: id, ip: endpoints[id].ip, status: endpoints[id].statusDesc }));
-    });
-    if (endpoints[id].status == 0) {
-
+    var url = 'http://' + endpoints[id].ip + '/getxml?location=/Status/SystemUnit/ProductId';
+    let buff = Buffer.from(username + ':' + password);
+    let auth = 'Basic ' + buff.toString('base64');
+    var params = {
+        method: 'GET',
+        url: url,
+        headers: { 'authorization': auth },
+        timeout: 10000  // changing the connect timeout from the default (120000 = 2 mins)
+    };
+    request(params, function(error, response, body) {
+        if (error) {
+            //error connecting to the endpoint
+            console.log('ERROR checking connectivity to the endpoint: ' + error);
+            endpoints[id].status = 21;
+            endpoints[id].statusDesc = 'ERROR testing connectivity to the endppoint: ' + error;
+            // Note: the IP address is used to identify the description <td> element
+            res.end(JSON.stringify({ id: id, ip: endpoints[id].ip, status: endpoints[id].statusDesc }));
+            return;
+        }
+        if (response.statusCode!=200) {
+            // error on the endpoint
+            console.log('ERROR from the endpoint: HTTP ' + response.statusCode);
+            endpoints[id].status = 22;
+            endpoints[id].statusDesc = 'ERROR: ' + response.body;
+            // Note: the IP address is used to identify the description <td> element
+            res.end(JSON.stringify({ id: id, ip: endpoints[id].ip, status: endpoints[id].statusDesc }));
+            return;
+        }
+        // saves for later the endpoint productId
+        const dom = new JSDOM(response.body);
+        const product = dom.window.document.querySelector('ProductId').textContent;
+        
         // migration step 2: create the place
         var url = 'https://api.ciscospark.com/v1/places';
         var data = { displayName: endpoints[id].place, type: 'room_device' };
-        const params = {
+        params = {
             method: 'POST',
             url: url,
             body: JSON.stringify(data),
-            headers: { 'Content-Type': 'application/json', 'authorization': 'Bearer ' + token }};
+            headers: { 'Content-Type': 'application/json', 'authorization': 'Bearer ' + token }
+        };
         request(params, function (error, response, body) {
-            if (error || response.statusCode != 200) {
-                console.log("Error creating the place!");
-                endpoints[id].status = 3;
-                endpoints[id].statusDesc = 'ERROR: cannot create the Place. Check the entitlement.';
-                res.status(200);
+            if (error) {
+                console.log("ERROR connecting to Webex to create the place!");
+                endpoints[id].status = 31;
+                endpoints[id].statusDesc = 'ERROR: cannot connect to Webex to create the Place.';
                 // Note: the IP address is used to identify the description <td> element
                 res.end(JSON.stringify({ id: id, ip: endpoints[id].ip, status: endpoints[id].statusDesc }));
+                return;
             }
-            else {
-                const json = JSON.parse(body);
-                var place = json.id;
-                console.log('Place created: ' + place);
+            if (response.statusCode != 200) {
+                console.log("ERROR creating the place!");
+                endpoints[id].status = 32;
+                endpoints[id].statusDesc = 'ERROR: cannot create the place. ' + response.body;
+                // Note: the IP address is used to identify the description <td> element
+                res.end(JSON.stringify({ id: id, ip: endpoints[id].ip, status: endpoints[id].statusDesc }));
+                return;
+            }
+            var place = JSON.parse(body).id;
+            console.log('Place created, ID: ' + place);
 
-                // migration step 3: create the code
-                var url = 'https://api.ciscospark.com/v1/devices/activationCode';
-                var data = { placeId: place };
-                const params = {
+            // migration step 3: create the code
+            var url = 'https://api.ciscospark.com/v1/devices/activationCode';
+            var data = { placeId: place };
+            params = {
+                method: 'POST',
+                url: url,
+                body: JSON.stringify(data),
+                headers: { 'Content-Type': 'application/json', 'authorization': 'Bearer ' + token }
+            };
+            request(params, function (error, response, body) {
+                if (error) {
+                    console.log("ERROR connecting to Webex to create the code!");
+                    endpoints[id].status = 41;
+                    endpoints[id].statusDesc = 'ERROR: cannot connect to Webex to create the activation code.';
+                    // Note: the IP address is used to identify the description <td> element
+                    res.end(JSON.stringify({ id: id, ip: endpoints[id].ip, status: endpoints[id].statusDesc }));
+                    return;
+                }
+                if (response.statusCode != 200) {
+                    console.log("ERROR creating the activation code!");
+                    endpoints[id].status = 42;
+                    endpoints[id].statusDesc = 'ERROR: cannot create the activation code. ' + response.body;
+                    // Note: the IP address is used to identify the description <td> element
+                    res.end(JSON.stringify({ id: id, ip: endpoints[id].ip, status: endpoints[id].statusDesc }));
+                    return;
+                }
+                var code = JSON.parse(body).code;
+                console.log('Code created: ' + code);
+
+                // migration step 4: sending the activation code to the endpoint
+                let option = 'NoAction';
+                if (disableAdmin) {option = 'Harden'};
+                // sample
+                //var data = '<Command><Webex><Registration><Start><ActivationCode>12345678</ActivationCode><SecurityAction>NoAction</SecurityAction></Start></Registration></Webex></Command>';
+                var data = '<Command><Webex><Registration><Start>';
+                data += '<ActivationCode>' + code + '</ActivationCode>';
+                data += '<SecurityAction>' + option + '</SecurityAction>';
+                data += '</Start></Registration></Webex></Command>';
+                var url = 'http://' + endpoints[id].ip + '/putxml';
+                params = {
                     method: 'POST',
                     url: url,
-                    body: JSON.stringify(data),
-                    headers: { 'Content-Type': 'application/json', 'authorization': 'Bearer ' + token }
-                };
-                request(params, function (error, response, body) {
-                    if (error || response.statusCode != 200) {
-                        console.log("Error creating the activation code!");
-                        endpoints[id].status = 4;
-                        endpoints[id].statusDesc = 'ERROR: cannot create the activation code. Check the entitlement.';
-                        res.status(200);
+                    body: data,
+                    timeout: 10000,  // changing the connect timeout from the default (120000 = 2 mins)
+                    headers: { 'Content-Type': 'text/xml', 'authorization': auth }};
+                    request(params, function (error, response, body) {
+                    if (error) {
+                        //error connecting to the endpoint
+                        console.log('ERROR connecting to the endpoint: ' + error);
+                        endpoints[id].status = 51;
+                        endpoints[id].statusDesc = 'ERROR: cannot reach to the endpoint. Check connectivity.';
                         // Note: the IP address is used to identify the description <td> element
                         res.end(JSON.stringify({ id: id, ip: endpoints[id].ip, status: endpoints[id].statusDesc }));
+                        return;
                     }
-                    else {
-                        const json = JSON.parse(body);
-                        var code = json.code;
-                        console.log('Code created: ' + code);
-
-                        // migration step 4: sending the activation code to the endpoint
-                        let option = 'NoAction';
-                        if (disableAdmin) {
-                            option = 'Harden'
-                        }
-                        // To replace with Request in order to get the response
-                        xapi.command('Webex Registration Start', { ActivationCode: code, SecurityAction: option });
-                        // assuming the migration command has completed 
-                        endpoints[id].status = 1;
-                        endpoints[id].statusDesc = 'Migration of the endpoint completed succesfully.';
-                        // sends the response to the client
-                        res.status(200);
+                    if (response.statusCode != 200) {
+                        // error on the endpoint
+                        console.log('ERROR from the endpoint: HTTP ' + response.statusCode);
+                        endpoints[id].status = 52;
+                        endpoints[id].statusDesc = 'ERROR: ' + response.body;
                         // Note: the IP address is used to identify the description <td> element
                         res.end(JSON.stringify({ id: id, ip: endpoints[id].ip, status: endpoints[id].statusDesc }));
+                        return;
                     }
-
-
-
+                    // parses the response
+                    //    check if it contains the tag <Reason>  -> means that it was KO
+                    console.log('Migration command output: ' + response.body);
+                    if (response.body.includes('<Reason>')) {
+                        const dom = new JSDOM(response.body);
+                        const reason = dom.window.document.querySelector('Reason').textContent;
+                        endpoints[id].statusDesc = 'Migration not complete, reason: ' + reason;
+                        // Note: the IP address is used to identify the description <td> element
+                        res.end(JSON.stringify({ id: id, ip: endpoints[id].ip, status: endpoints[id].statusDesc }));
+                        return
+                    }
+                    // assumes that the migration has been OK
+                    endpoints[id].statusDesc = product + ': migration completed successfully.';
+                    // Note: the IP address is used to identify the description <td> element
+                    res.end(JSON.stringify({ id: id, ip: endpoints[id].ip, status: endpoints[id].statusDesc }));
                 });
-
-
-
-
-            }
+            });
         });
-    };
+    });
 });
+
 
 // shows a 404 error if no other routes are matched
 // note: default path for .ejs files is /views
