@@ -15,7 +15,7 @@ Node.js with the following libraries:
 
 0) Install node.js and the required libraries
 
-1) run: node migrator_v01.js
+1) run: node migrator_v2.0beta.js
 
 2) browse at localhost:8080
 
