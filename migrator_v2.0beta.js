@@ -43,9 +43,7 @@ var endpoints = [];
 var username, password, disableAdmin;
 
 
-// Step 1: initiate the OAuth flow
-//   - serves a Web page with a link to the Webex OAuth flow initializer
-
+// Starts the OAuth flow
 app.get('/', function (req, res) {
     console.log('serving the Migrator home page');
 
@@ -63,7 +61,7 @@ app.get('/index.html', function (req, res) {
     res.redirect('/');
 });
 
-// Step 2: process OAuth on redirect from Webex Oauth
+// Process OAuth on redirect from Webex
 app.get('/oauth', function (req, res) {
     console.log("Oauth callback (redirect) received");
 
@@ -217,11 +215,9 @@ app.get('/oauth', function (req, res) {
     });
 });    
 
+// Refresh the devices (CH like) view
 app.get('/refresh', function (req, res) {
     console.log("Refresh requested");
-
-    // Retrieves the list of the devices - GET https://api.ciscospark.com/v1/devices
-
     const options = {
         method: 'GET',
         url: 'https://api.ciscospark.com/v1/devices',
@@ -254,7 +250,7 @@ app.get('/refresh', function (req, res) {
     });
 });    
 
-// displays the form for the migration (data collection)
+// Displays the form for the migration (data collection)
 app.get("/migrateForm", function (req, res) {
     console.log("Migrate requested");
     // Return the HTML page via a EJS template
@@ -266,7 +262,7 @@ app.get("/migrateForm", function (req, res) {
     }
 });
 
-// loads the migration data in the global variables and displays the table
+// Loads the migration data in the global variables and displays the table
 app.post('/migrateTable', function(req, res){
     console.log('Load migration data and display the table');
     //console.log(req.body);
@@ -475,9 +471,7 @@ app.post('/migrate', function (req, res) {
     });
 });
 
-
 // shows a 404 error if no other routes are matched
-// note: default path for .ejs files is /views
 app.use(function(req, res) {
     res.status(404).render('404.ejs');
 });
@@ -497,5 +491,4 @@ function getLogoutURL(token, redirectURL) {
 
 
 // Starts the Express HTTP server
-
 app.listen(port, () => console.log("HTTP Server (Express) listening on port: " + port));
