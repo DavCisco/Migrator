@@ -1,0 +1,28 @@
+{
+  "name": "2019-08_migration",
+  "version": "2.0.0",
+  "description": "Webex Migrator",
+  "main": "migrator.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DavCisco/Migrator.git"
+  },
+  "author": {
+    "name": "Davide Grandis",
+    "email": "dgrandis@cisco.com"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/DavCisco/Migrator/issues"
+  },
+  "homepage": "https://github.com/DavCisco/Migrator#readme",
+  "dependencies": {
+    "express": "^4.17.1",
+    "jsdom": "^15.1.1",
+    "path": "^0.12.7",
+    "request": "^2.88.0"
+  }
+}
