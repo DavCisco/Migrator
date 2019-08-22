@@ -3,129 +3,144 @@
 
 <head>
 	<meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
-  <link rel="shortcut icon" href="/images/logo4.png" type="image/x-icon">
-  <title>WX Migrator</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
+	<link rel="shortcut icon" href="/images/logo4.png" type="image/x-icon">
+	<title>WX Migrator</title>
 	<style>
-		h1 {
-		font-family: georgia;
-		}
 		body {
-			background-color: #faf2e4;
+			background-color: #f2f2f2;
 			font-family: sans-serif;
 			margin-left: 0px;
 			margin-right: 0px;
 			margin-top: 0px;
 		}
+
 		header {
-			border-bottom: 1px solid #57b1dc;
-			background-color: #33C7FF;
+			background-color: #0073e6;
+			color: #e6e6e6;
 			margin-left: 0px;
 			margin-right: 0px;
 			margin-top: 0px;
 			display: grid;
 			grid-template-rows: 30px 30px 30px 30px;
-			grid-template-columns: 20px 90px 1fr 60px 400px 150px;
+			grid-template-columns: 20px 70px 1fr 60px 400px 150px;
 		}
-		#titleTable {
-			margin-top: 40px;
-			margin-left: 70px;
-			border-bottom: 1px solid #57b1dc;
-		}
-		nav {
-				width: 100%;
-				margin-left: 50px;
-				margin-right: 50px;
-				margin-top: 7px;
-				margin-bottom: 7px;
-				float: right;
-				padding-top: 8px;
-				padding-bottom: 4px;
+
+		header h1 {
+			font-family: Arial;
+			margin: 0;
+			padding-top: 10px;
 		}
 
 		#logo {
 			grid-row-start: 2;
 			grid-column-start: 2;
 		}
-		#title {
+
+		#name {
 			grid-row-start: 2;
 			grid-column-start: 3;
 		}
+
 		#userLbl {
 			grid-row-start: 1;
 			grid-column-start: 4;
-			color: gray;
+			color: #f2f2f2;
 		}
+
 		#orgLbl {
 			grid-row-start: 3;
 			grid-column-start: 4;
-		  color: gray;
+			color: #f2f2f2;
 		}
+
 		#user {
 			grid-row-start: 1;
 			grid-column-start: 5;
-			color: gray;
+			color: #f2f2f2;
 		}
+
 		#org {
 			grid-row-start: 3;
 			grid-column-start: 5;
-			color: gray;
+			color: #f2f2f2;
 		}
 		#lo {
 			grid-row-start: 2;
 			grid-column-start: 6;
 		}
+		main {
+			width: 90vw;
+			margin: 0 auto;
+		}
+		#title {
+			padding-top: 20px;
+			padding-bottom: 0px;
+		}
+		#title-h2 {
+			padding: 0;
+			margin: 0;
+			margin-left: 10px;
+		}
+		nav {
+			margin-top: 0px;
+			margin-bottom: 0px;
+			float: right;
+			padding-top: 0px;
+			padding-bottom: 5px;
+		}
 		.button {
-				background-color: #3AD6CF;
-				border: none;
-				color: white;
-				padding: 15px 25px;
-				text-align: center;
-				font-size: 17px;
-				cursor: pointer;
-				border: 1px solid;
-				border-radius: 2em;
-				padding: .5em 1em;
-				margin: .1em;
-				float: right;
+			background-color: #3AD6CF;
+			border: none;
+			color:white;
+			padding: 15px 25px;
+			text-align: center;
+			font-size: 17px;
+			cursor: pointer;
+			border: 1px solid;
+			border-radius: 2em;
+			padding: .5em 1em;
+			margin: .1em;
+			float: right;
 		}
 		.button:hover {
-				background-color: #B6BEBE;
-		}
-		main {
-				margin-left: 50px;
-				margin-right: 50px;
+			background-color: #B6BEBE;
 		}
 		#tableDevices {
-				border: 2px outset;
-				background-color: white;
-				width: 100%;
+			border: 2px ridge;
+			background-color: white;
+			width: 100%;
 		}
 		th {
-				border: 1px solid;
-				background-color: #B6BEBE;
-				align-items: left;
-				height: 30px;
+			border: 1px solid;
+			background-color: #B6BEBE;
+			align-items: left;
+			height: 30px;
 		}
 		.cell-align-center {
-				text-align: center;
+			text-align: center;
+		}
+		#content {
+			overflow-y: scroll;
+			width: 100%;
+			height: calc(100vh - 120px - 48px - 47.38px - 50px - 30px);
 		}
 		footer {
-			color: gray;
+			background-color: #0073e6;
+			color: #e6e6e6;
 			font-style: italic;
-			border-top: 1px solid #57b1dc;
 			text-align: center;
 			width: 100%;
 			position: fixed;
-			bottom: 0%;
-			left: 0%;
+			bottom: 0;
 		}
 	</style>
 </head>
+
 <body>
 	<header>
-		<img src='/davpages/cropped-rocket-logo-inverted-transparent_small.png' alt='logo' id='logo'>
-		<h1 id='title'>WX Migrator v2.0 (beta)</h1>
+		<img id='logo' src='/davpages/cropped-rocket-logo-inverted-transparent_small.png' alt='logo' style="width:60px;height:60px;">
+		<h1 id='name'>WX Migrator</h1>
 		<h4 id='userLbl'>User:</h4>
 		<h4 id='user'><%= user %></h4>
 		<h3 id='lo'><a href='TO-DO'>Logout</a></h3>

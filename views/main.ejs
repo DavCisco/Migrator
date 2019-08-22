@@ -1,37 +1,112 @@
 <% include header.ejs %>
 
-	<div id='titleTable'>
-		<h2>Devices</h2>
-	</div>
-	
-	<nav>
-		<button class='button' class='button'><a href='/migrateForm'>Migrate Device...</a></button>
-		<button class='button' class='button'><a href="/adddevice">Add Device...</A></button>
-		<button type='button' class='button'><a href='/refresh'>Refresh</a></button>
-	</nav>
-	
 	<main>
-		<table id='tableDevices'>
-			<tr>
-				<th style='width:35%'>Type</th><th style='width:35%'>Belongs to Place</th><th style='width:15%'>IP Address</th><th style='width:15%'>Status</th>
-			</tr>
-			<% devices.forEach(function(device) { %>
-			<tr>
-				<td style='height:28px'><%= device.type %></td>
-				<td><%= device.place %></td>
-				<td><%= device.ip %></td>
-				<td><%= device.status %></td>
-			</tr>
-			<% }); %>
-
-		</table>
-
-
-
+	
+		<div id='title'>
+			<h2 id='title-h2'>Devices</h2>
+		</div>
+	
+		<nav>
+			<button type='button' class='button' onclick='removePlaces()'>Remove empty places</button>
+			<button type='button' class='button' onclick='migrateForm()'>Migrate Devices</button>
+			<button type='button' class='button' onclick='addDevice()'>Add Device</button>
+			<button type='button' class='button' onclick='refresh()'>Refresh</button>
+		</nav>
+	
+		<div id='content'>
+			<table id='tableDevices'>
+				<tr>
+					<th style='width:35%'>Type</th>
+					<th style='width:35%'>Name (Place)</th>
+					<th style='width:15%'>IP Address</th>
+					<th style='width:15%'>Status</th>
+				</tr>
+				<% devices.forEach(function(device) { %>
+				<tr>
+					<td style='height:28px'><%= device.type %></td>
+					<td><%= device.place %></td>
+					<td><%= device.ip %></td>
+					<td><%= device.status %></td>
+				</tr>
+				<% }); %>
+			</table>
+		</div>
 	</main>
+
 
 	<% include footer.ejs %>
 
 </body>
+<script>
+	function refresh() {
+
+		var http = new XMLHttpRequest();
+		// Define what happens on successful data submission
+		http.addEventListener('load', function (event) {
+			// loads the entire page
+			document.write(this.responseText);
+			document.close();
+		});
+		// define what happens in case of error
+		http.addEventListener('error', function (event) {
+			alert('Oops! Something went wrong.');
+		});
+		http.open('GET', '/refresh');
+		http.send();
+	};
+
+	function migrateForm() {
+
+		var http = new XMLHttpRequest();
+		// Define what happens on successful data submission
+		http.addEventListener('load', function (event) {
+			// loads the entire page
+			document.write(this.responseText);
+			document.close();
+		});
+		// define what happens in case of error
+		http.addEventListener('error', function (event) {
+			alert('Oops! Something went wrong.');
+		});
+		http.open('GET', '/migrateForm');
+		http.send();
+	};
+
+	function addDevice() {
+
+		var place = window.prompt('Input the name of the new place:');
+		place = 'place=' + place;
+		place = encodeURI(place);
+		//console.log(place);
+		var http = new XMLHttpRequest();
+		// Define what happens on successful data submission
+		http.addEventListener('load', function (event) {
+			const code = this.response.code;
+			console.log(code);
+			alert('Code created: '+ code);
+		});
+		// define what happens in case of error
+		http.addEventListener('error', function (event) {
+			alert('Oops! Something went wrong.');
+		});
+		http.open('POST', '/addDevice',true);
+		http.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+		http.send(place);
+	};
+	function removePlaces() {
+
+		var http = new XMLHttpRequest();
+		// Define what happens on successful data submission
+		http.addEventListener('load', function (event) {
+			// no action
+		});
+		// define what happens in case of error
+		http.addEventListener('error', function (event) {
+			alert('Oops! Something went wrong.');
+		});
+		http.open('GET', '/checkPlaces');
+		http.send();
+	};
+</script>
 
 </html>

@@ -1,26 +1,33 @@
 	<main id='main'>
-		<br />
-		<button type='button' class='button'><a href='/refresh'>Cancel</a></button>
-		<br />
 
-		<table id='tableDevices'>
-			<tr>
-				<th style='width:15%'>IP address</th>
-				<th style='width:25%'>Place name</th>
-				<th style='width:50%'>Status</th>
-				<th style='width:10%'>Action</th>
-			</tr>
-			<% endpoints.forEach(function(endpoint) { %>
-			<tr>
-				<td style='height:28px'><%= endpoint.ip %></td>
-				<td><%= endpoint.place %></td>
-				<td id=<%= endpoint.ip %>><%= endpoint.statusDesc %></td>
-				<td class='cell-align-center'><button id=<%= endpoint.id %> type='button' onclick='action()'>Migrate</button></td>
-				<!-- <td class='cell-align-center'><button id=<%= endpoint.id %> type='button'><a href='/migrate-btn-' + <%= endpoint.id %>>Migrate</a></button></td> -->
+	<div id='title'>
+		<h2 id='title-h2'>Devices</h2>
+	</div>
+	
+	<nav>
+		<button type='button' class='button' onclick='cancel()'>Cancel</button>
+	</nav>
 
-			</tr>
-			<% }); %>
-		
-		</table>
-		
+		<div id='content'>
+
+			<table id='tableDevices'>
+				<tr>
+					<th style='width:15%'>IP address</th>
+					<th style='width:25%'>Place name</th>
+					<th style='width:50%'>Status</th>
+					<th style='width:10%'>Action</th>
+				</tr>
+				<% endpoints.forEach(function(endpoint) { %>
+				<tr>
+					<td style='height:28px'><%= endpoint.ip %></td>
+					<td><%= endpoint.place %></td>
+					<td id=<%= endpoint.ip %>><%= endpoint.statusDesc %></td>
+					<td class='cell-align-center'><button id=<%= endpoint.id %> type='button' onclick='action()'>Migrate</button></td>
+					<!-- <td class='cell-align-center'><button id=<%= endpoint.id %> type='button'><a href='/migrate-btn-' + <%= endpoint.id %>>Migrate</a></button></td> -->
+				</tr>
+				<% }); %>
+			</table>
+		</div>
+
+
 	</main>

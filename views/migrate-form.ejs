@@ -1,29 +1,33 @@
 <% include header.ejs %>
 
-	<div id='titleTable'>
-		<h2>Devices</h2>
-	</div>
-	
-	<main id='main'>
 
-	<br>
+	<main id='main'>
 	
-		<form>
-			<fieldset>
-				<legend><b>On-premises endpoint migration</b></legend>
+		<div id='title'>
+			<h2 id='title-h2'>Devices</h2>
+		</div>
+	
+		<nav>
+
+			<button type='button' class='button' onclick='sendData()'>Migrate</button>
+			<button type='button' class='button' onclick='cancel()'>Cancel</button>
+
+		</nav>
+	
+	 	<div id='content'>
+			<form>
+				<fieldset>
+					<legend><b>On-premises endpoint migration</b></legend>
 					<p><i>Select the .csv file:</i></p>
-					<p><input type='file' id='fileselect' accept='text/plain' value='fileselect'/></p>
+					<p><input type='file' id='fileselect' accept='text/plain' value='fileselect' /></p>
 					<p><i>Credentials for the on-prem endpoints:</i></p>
-					<p><label>username: </label><input type='text' id='username' class='input' placeholder='admin'/></p>
+					<p><label>username: </label><input type='text' id='username' class='input' placeholder='admin' /></p>
 					<p><label>password: </label><input type='password' id='pwd'/ class='input'></p>
 					<p><i>Security:</i></p>
-					<p><input id='disableAdmin' type='checkbox'/> Disable local admin user and macros</p>
-			</fieldset>
-		</form>
-		<br>
-		<button type='button' class='button' onclick='sendData()'>Migrate</button>
-		<button type='button' class='button'><a href='/refresh'>Cancel</a></button>
-
+					<p><input id='disableAdmin' type='checkbox' /> Disable local admin user and macros</p>
+				</fieldset>
+			</form>
+		</div>
 	</main>
 
 
@@ -33,4 +37,22 @@
 
 <% include script.ejs %>
 
+<script>
+function cancel() {
+
+	var http = new XMLHttpRequest();
+			// Define what happens on successful data submission
+			http.addEventListener('load', function (event) {
+				// loads the entire page
+				document.write(this.responseText);
+				document.close();
+			});
+			// define what happens in case of error
+			http.addEventListener('error', function (event) {
+				alert('Oops! Something went wrong.');
+			});
+			http.open('GET', '/refresh');
+			http.send();
+		};
+</script>
 </html>
