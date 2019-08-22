@@ -3,7 +3,6 @@
 // Licensed under the MIT License 
 //
 
-
 const express = require('express');
 const request = require("request");
 const path = require('path');
@@ -11,7 +10,6 @@ const jsdom = require("jsdom");
 const { JSDOM } = jsdom;
 
 // Webex integration details
-
 const clientId = 'C00f24cafd10fcdaacd19edc9cb8da5a673808430778c3ee4d0fb8d24781bd8ed';
 const clientSecret = '6229fcb498fab55778387a316cbe54ea421f45c25fb6ece9746e2a39b5f152e1';
 // the scopes separator is a space, example: "spark:people_read spark:rooms_read"
@@ -27,10 +25,8 @@ app.use(express.static(path.join(__dirname, 'www/assets')));
 // to support URL-encoded bodies by the client (for POST) 
 app.use(express.urlencoded({extended: true}));
 
-// For output of the Oauth procedure
-var token;
-var user;
-var org;
+// for the output of the Oauth procedure
+var token, user, org;
 
 // Variables for the migration
 //    endpoint: includes the full state of the migration, including
@@ -47,7 +43,6 @@ var org;
 var endpoints = [];
 // credentials for the on-prem endpoints
 var username, password, disableAdmin;
-
 
 // Starts the OAuth flow
 app.get('/', function (req, res) {
@@ -477,12 +472,137 @@ app.post('/migrate', function (req, res) {
     });
 });
 
+// starts the migration of the requested endpoint (from the migrate button in the migration table)
+app.post('/addDevice', function (req, res) {
+    console.log('Add device requested');
+    var place = req.body.place;
+    console.log('Place: ' + place);
+    // step 1: creation of the place
+    var url = 'https://api.ciscospark.com/v1/places';
+    var data = { displayName: place, type: 'room_device'};
+    params = {
+        method: 'POST',
+        url: url,
+        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json', 'authorization': 'Bearer ' + token }
+    };
+    request(params, function (error, response, body) {
+        if (error) {
+            console.log("Auth failure - error: " + error);
+            res.redirect('/');
+            return;
+        }
+        if (response.statusCode != 200) {
+            console.log('ERROR: cannot create the place. ' + response.body);
+            //res.end(JSON.stringify({ id: id, ip: endpoints[id].ip, status: endpoints[id].statusDesc }));
+            return;
+        }
+        var placeId = JSON.parse(body).id;
+        console.log('Place created, ID: ' + placeId);
+
+        // step 2: creates the activation code
+        var url = 'https://api.ciscospark.com/v1/devices/activationCode';
+        var data = { placeId: placeId };
+        params = {
+            method: 'POST',
+            url: url,
+            body: JSON.stringify(data),
+            headers: { 'Content-Type': 'application/json', 'authorization': 'Bearer ' + token }
+        };
+        request(params, function (error, response, body) {
+            if (error) {
+                console.log("ERROR connecting to Webex to create the code!");
+                //endpoints[id].statusDesc = 'ERROR: cannot connect to Webex to create the activation code.';
+                //res.end(JSON.stringify({ id: id, ip: endpoints[id].ip, status: endpoints[id].statusDesc }));
+                return;
+            }
+            if (response.statusCode != 200) {
+                console.log("ERROR creating the activation code!");
+                //endpoints[id].statusDesc = 'ERROR: cannot create the activation code. ' + response.body;
+                //res.end(JSON.stringify({ id: id, ip: endpoints[id].ip, status: endpoints[id].statusDesc }));
+                return;
+            }
+            var code = JSON.parse(body).code;
+            console.log('Code created: ' + code);
+            res.end(JSON.stringify({code: code}));
+        });
+    });
+});
+
+app.get('/checkPlaces', function (req, res) {
+    console.log('Remove empty places requested');
+    // first gets the list of the places associated to the devices
+    // secondly, cancel all places that don't match
+    let options = {
+        method: 'GET',
+        url: 'https://api.ciscospark.com/v1/devices',
+        headers: { "authorization": "Bearer " + token }
+    };
+    request(options, function (error, response, body) {
+        if (error) {
+            console.log("could not reach Webex API to retrieve the device list, error: " + error);
+            res.redirect('/');
+            return;
+        }
+        // Check if the call is successful
+        if (response.statusCode != 200) {
+            console.log("could not retrieve the device list, devices returned: " + response.statusCode);
+            res.redirect('/');
+            return;
+        }
+        let json = JSON.parse(body);
+        const nbrPlacesInUse = json.items.length;
+        var placesInUse = [];
+        for (let i = 0; i < json.items.length; i++) {
+            placesInUse.push(json.items[i].placeId)
+        }
+        options = {
+            method: 'GET',
+            url: 'https://api.ciscospark.com/v1/places?max=1000',
+            headers: { "authorization": "Bearer " + token }
+        };
+        request(options, function (error, response, body) {
+            if (error) {
+                console.log("could not reach Webex API to retreive the device list, error: " + error);
+                res.send("<h1>OAuth Integration could not complete</h1><p>Sorry, could not retrieve the device list. Try again.</p>");
+                return;
+            }
+            // Check if the call is successful
+            if (response.statusCode != 200) {
+                console.log("could not retreive the device list, /devices returned: " + response.statusCode);
+                res.send("<h1>OAuth Integration could not complete</h1><p>Sorry, could not retrieve the device list. Try again.</p>");
+                return;
+            }
+            json = JSON.parse(body);
+            const nbrPlaces = json.items.length;
+            var places = [];
+            for (let i = 0; i < json.items.length; i++) {
+                places.push(json.items[i].id);
+            }
+            console.log('You have '+ nbrPlacesInUse + ' places in use out of ' + nbrPlaces);
+
+            for (let i=0; i<nbrPlaces; i++) {
+                console.log(i);
+                if (placesInUse.indexOf(places[i]) != -1) {
+                    console.log('place to delete: ' + i);
+                    deletePlace(places[i]);
+                };
+            };
+            res.end();
+        });
+    });
+});
+
 // shows a 404 error if no other routes are matched
 app.use(function(req, res) {
     res.status(404).render('404.ejs');
 });
 
 // === F U N C T I O N S ===
+
+function deletePlace(place) {
+    console.log(place)
+};
 
 function getLogoutURL(token, redirectURL) {
   const rootURL = redirectURL.substring(0, redirectURL.length - 5);
@@ -494,7 +614,6 @@ function getLogoutURL(token, redirectURL) {
     token
   );
 }
-
 
 // Starts the Express HTTP server
 app.listen(port, () => console.log("HTTP Server (Express) listening on port: " + port));
