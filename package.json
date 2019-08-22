@@ -1,6 +1,6 @@
 {
-  "name": "2019-08_migration",
-  "version": "2.0.0",
+  "name": "WX Migrator",
+  "version": "3.0.0",
   "description": "Webex Migrator",
   "main": "migrator.js",
   "scripts": {
