@@ -103,8 +103,8 @@ app.get('/oauth', function (req, res) {
     };
     request(options, function (error, response, body) {
         if (error) {
-            console.log("could not reach Webex cloud to retreive access & refresh tokens");
-            res.send("<h1>OAuth Integration could not complete</h1><p>Sorry, could not retreive your access token. Try again.</p>");
+            console.log("could not reach Webex cloud to retrieve access & refresh tokens");
+            res.send("<h1>OAuth Integration could not complete</h1><p>Sorry, could not retrieve your access token. Try again.</p>");
             return;
         }
         if (response.statusCode != 200) {
@@ -118,7 +118,7 @@ app.get('/oauth', function (req, res) {
                     res.send("<h1>OAuth Integration could not complete</h1><p>OAuth authentication error. Check the secret.</p>");
                     break;
                 default:
-                    res.send("<h1>OAuth Integration could not complete</h1><p>Sorry, could not retreive your access token. Try again.</p>");
+                    res.send("<h1>OAuth Integration could not complete</h1><p>Sorry, could not retrieve your access token. Try again.</p>");
                     break;
             }
             return;
@@ -152,7 +152,7 @@ app.get('/oauth', function (req, res) {
             }
             // Check if the call is successful
             if (response.statusCode != 200) {
-                console.log("could not retreive your details, /people/me returned: " + response.statusCode);
+                console.log("could not retrieve your details, /people/me returned: " + response.statusCode);
                 res.send("<h1>OAuth Integration could not complete</h1><p>Sorry, could not retrieve your Webex Teams account details. Try again.</p>");
                 return;
             }
@@ -175,7 +175,7 @@ app.get('/oauth', function (req, res) {
                 }
                 // Check if the call is successful
                 if (response.statusCode != 200) {
-                    console.log("could not retreive your org details, /organizations returned: " + response.statusCode);
+                    console.log("could not retrieve your org details, /organizations returned: " + response.statusCode);
                     res.send("<h1>OAuth Integration could not complete</h1><p>Sorry, could not retrieve your Webex Teams org details. Try again.</p>");
                     return;
                 }
@@ -191,13 +191,13 @@ app.get('/oauth', function (req, res) {
                 };
                 request(options, function (error, response, body) {
                     if (error) {
-                        console.log("could not reach Webex API to retreive the device list, error: " + error);
+                        console.log("could not reach Webex API to retrieve the device list, error: " + error);
                         res.send("<h1>OAuth Integration could not complete</h1><p>Sorry, could not retrieve the device list. Try again.</p>");
                         return;
                     }
                     // Check if the call is successful
                     if (response.statusCode != 200) {
-                        console.log("could not retreive the device list, /devices returned: " + response.statusCode);
+                        console.log("could not retrieve the device list, /devices returned: " + response.statusCode);
                         res.send("<h1>OAuth Integration could not complete</h1><p>Sorry, could not retrieve the device list. Try again.</p>");
                         return;
                     }
@@ -567,13 +567,13 @@ app.get('/checkPlaces/:confirmed', function (req, res) {
         };
         request(options, function (error, response, body) {
             if (error) {
-                console.log("could not reach Webex API to retreive the device list, error: " + error);
+                console.log("could not reach Webex API to retrieve the device list, error: " + error);
                 res.send("<h1>OAuth Integration could not complete</h1><p>Sorry, could not retrieve the device list. Try again.</p>");
                 return;
             }
             // Check if the call is successful
             if (response.statusCode != 200) {
-                console.log("could not retreive the device list, /devices returned: " + response.statusCode);
+                console.log("could not retrieve the device list, /devices returned: " + response.statusCode);
                 res.redirect('/');
                 return;
             }
