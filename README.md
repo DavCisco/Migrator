@@ -27,7 +27,7 @@ Alternatively you can run the code on your own nodeJS server; here are the requi
 
 2) update the code with your integration's id, secret and your server IP address (lines 13 - 19)
  
-1) Install node.js and the required libraries (see package.json)
+1) Install node.js and the required libraries
 
 2) run: node migrator.js
 
