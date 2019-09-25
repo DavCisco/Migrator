@@ -81,9 +81,9 @@
 		var http = new XMLHttpRequest();
 		// Define what happens on successful data submission
 		http.addEventListener('load', function (event) {
-			const code = this.response.code;
+			let code = JSON.parse(this.responseText).code;
 			console.log(code);
-			alert('Code created: '+ code);
+			alert('Code: '+ code);
 		});
 		// define what happens in case of error
 		http.addEventListener('error', function (event) {
@@ -98,13 +98,22 @@
 		var http = new XMLHttpRequest();
 		// Define what happens on successful data submission
 		http.addEventListener('load', function (event) {
-			// no action
+			json = JSON.parse(this.responseText);
+			var placesInUse = json.placesInUse;
+			var places = json.places;
+			var message = 'You have ' + placesInUse + ' out of ' + places + ' places' + '\n\n';
+			message =+ 'Do you want to delete the ' + places - placesInUse + 'places that are not in use?';
+			if (confirm(message)) {
+				
+
+			}
 		});
 		// define what happens in case of error
 		http.addEventListener('error', function (event) {
 			alert('Oops! Something went wrong.');
 		});
-		http.open('GET', '/checkPlaces');
+		// not confirmed yet
+		http.open('GET', '/checkPlaces/n');
 		http.send();
 	};
 </script>
