@@ -2,7 +2,9 @@
 WX Migrator has been built to demo the use of Webex devices/places API and in particular to show how these new APIs can be used to easily and remotely migrate on-prem video endpoints to Webex.
 
 Leveraging the Webex authentication, the tool resembles the Control Hub's devices page: it lists all the devices in the org (admin access is required).
+
 From there it allows to simply create an activation code in one click and also to start the on-prem migration providing the list of on-prem registered endpoints via a .CSV file.
+
 Please see the examples provided in the repo for the format of the .CSV file.
 
 # Version
