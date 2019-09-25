@@ -14,7 +14,7 @@ const clientId = 'C00f24cafd10fcdaacd19edc9cb8da5a673808430778c3ee4d0fb8d24781bd
 const clientSecret = '6229fcb498fab55778387a316cbe54ea421f45c25fb6ece9746e2a39b5f152e1';
 // the scopes separator is a space, example: "spark:people_read spark:rooms_read"
 // Note: spark:kms is added by default in the integration definition
-const scopes = 'spark:kms spark:people_read spark-admin:people_read spark-admin:devices_write spark-admin:places_write spark-admin:organizations_read identity:placeonetimepassword_create';
+const scopes = 'spark:kms spark:people_read spark-admin:devices_write spark-admin:places_write spark-admin:organizations_read identity:placeonetimepassword_create';
 const port = '8080';
 const redirectURI = `http://10.58.9.150:${port}/oauth`;
 const state = 'Challenge';  // not used
