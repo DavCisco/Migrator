@@ -16,7 +16,7 @@ const clientSecret = '6229fcb498fab55778387a316cbe54ea421f45c25fb6ece9746e2a39b5
 // Note: spark:kms is added by default in the integration definition
 const scopes = 'spark:kms spark:all spark-admin:devices_write spark-admin:places_write spark-admin:organizations_read identity:placeonetimepassword_create';
 const port = '8080';
-const redirectURI = `http://localhost:${port}/oauth`;
+const redirectURI = `http://10.58.9.150:${port}/oauth`;
 const state = 'Challenge';  // not used
 
 const app = express();
@@ -524,12 +524,14 @@ app.post('/addDevice', function (req, res) {
             }
             var code = JSON.parse(body).code;
             console.log('Code created: ' + code);
-            res.end(JSON.stringify({code: code}));
+            res.end(JSON.stringify({ code: code }));
         });
     });
 });
 
-app.get('/checkPlaces', function (req, res) {
+app.get('/checkPlaces/:confirmed', function (req, res) {
+    // will be used later
+    var confirmed = req.params.confirmed;
     console.log('Remove empty places requested');
     // first gets the list of the places associated to the devices
     // secondly, cancel all places that don't match
@@ -570,7 +572,7 @@ app.get('/checkPlaces', function (req, res) {
             // Check if the call is successful
             if (response.statusCode != 200) {
                 console.log("could not retreive the device list, /devices returned: " + response.statusCode);
-                res.send("<h1>OAuth Integration could not complete</h1><p>Sorry, could not retrieve the device list. Try again.</p>");
+                res.redirect('/');
                 return;
             }
             json = JSON.parse(body);
@@ -579,15 +581,32 @@ app.get('/checkPlaces', function (req, res) {
             for (let i = 0; i < json.items.length; i++) {
                 places.push(json.items[i].id);
             }
-            console.log('You have '+ nbrPlacesInUse + ' places in use out of ' + nbrPlaces);
+            
+            confirmed = 'n';
+            
+            // if to be confirmed
+            if (confirmed == 'n') {
+                console.log('There are ' + nbrPlacesInUse + ' places in use out of ' + nbrPlaces);
+                console.log('Requesting confirmation');
+                res.end(JSON.stringify({ placesInUse: nbrPlacesInUse, places: nbrPlaces }));
 
-            for (let i=0; i<nbrPlaces; i++) {
-                console.log(i);
-                if (placesInUse.indexOf(places[i]) != -1) {
-                    console.log('place to delete: ' + i);
-                    deletePlace(places[i]);
+            }
+            else {
+                for (let i = 0; i < nbrPlaces; i++) {
+                    //console.log('#' + i + ':' + places[i]);
+                    if (!placesInUse.includes(places[i])) {
+                        console.log('Place to delete: ' + i);
+                        deletePlace(places[i]);
+                    };
                 };
+
             };
+
+            
+
+
+            
+
             res.end();
         });
     });
