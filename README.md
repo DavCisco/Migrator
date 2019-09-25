@@ -19,7 +19,7 @@ Node.js with the following libraries:
 
 # How To
 
-Since Sept 25th the server runs on 10.58.9.150 so you can try it simply by connecting to: http://10.58.9.150 (Cisco internal only).
+Since Sept 25th the server runs on 10.58.9.150 so you can try it simply by connecting to: http://10.58.9.150:8080 (Cisco internal only).
 
 Alternatively you can run the code on your own nodeJS server; here are the required steps:
 
