@@ -6,7 +6,7 @@ Webex Migrator version 2.0 beta (Aug 15th 2019)
 
 # Requirements
 Node.js with the following libraries: 
-- express
+- express & ejs
 - request
 - path
 - jsdom
